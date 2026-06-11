@@ -1,114 +1,128 @@
+import streamlit as st
 import random
 import time
-import streamlit
 
-def number_guess():
-    print("\n=== 숫자 맞추기 게임 ===")
-    answer = random.randint(1, 100)
+st.set_page_config(page_title="미니게임 모음", page_icon="🎮")
 
-    while True:
-        guess = int(input("1~100 사이 숫자를 입력하세요: "))
+st.title("🎮 미니게임 6종 모음")
 
-        if guess < answer:
-            print("UP!")
-        elif guess > answer:
-            print("DOWN!")
+# 세션 상태 초기화
+if "answer" not in st.session_state:
+    st.session_state.answer = random.randint(1, 100)
+
+game = st.sidebar.selectbox(
+    "게임 선택",
+    [
+        "숫자 맞추기",
+        "가위바위보",
+        "동전 던지기",
+        "주사위 굴리기",
+        "퀴즈 게임",
+        "행운의 슬롯머신"
+    ]
+)
+
+# 1. 숫자 맞추기
+if game == "숫자 맞추기":
+    st.header("🔢 숫자 맞추기")
+
+    guess = st.number_input(
+        "1~100 사이 숫자를 입력하세요",
+        min_value=1,
+        max_value=100,
+        step=1
+    )
+
+    if st.button("확인"):
+        if guess < st.session_state.answer:
+            st.warning("UP!")
+        elif guess > st.session_state.answer:
+            st.warning("DOWN!")
         else:
-            print("정답!")
-            break
+            st.success("🎉 정답!")
+            st.session_state.answer = random.randint(1, 100)
 
-def rock_paper_scissors():
-    print("\n=== 가위바위보 ===")
+# 2. 가위바위보
+elif game == "가위바위보":
+    st.header("✌️ 가위바위보")
 
-    choices = ["가위", "바위", "보"]
-    computer = random.choice(choices)
-    user = input("가위, 바위, 보 중 입력: ")
+    user = st.radio(
+        "선택하세요",
+        ["가위", "바위", "보"]
+    )
 
-    print("컴퓨터:", computer)
+    if st.button("대결"):
+        computer = random.choice(["가위", "바위", "보"])
 
-    if user == computer:
-        print("무승부!")
-    elif (user == "가위" and computer == "보") or \
-         (user == "바위" and computer == "가위") or \
-         (user == "보" and computer == "바위"):
-        print("승리!")
-    else:
-        print("패배!")
+        st.write("컴퓨터:", computer)
 
-def coin_flip():
-    print("\n=== 동전 던지기 ===")
-    result = random.choice(["앞면", "뒷면"])
-    print("결과:", result)
+        if user == computer:
+            st.info("무승부!")
+        elif (
+            (user == "가위" and computer == "보") or
+            (user == "바위" and computer == "가위") or
+            (user == "보" and computer == "바위")
+        ):
+            st.success("승리!")
+        else:
+            st.error("패배!")
 
-def dice_roll():
-    print("\n=== 주사위 굴리기 ===")
-    result = random.randint(1, 6)
-    print("주사위:", result)
+# 3. 동전 던지기
+elif game == "동전 던지기":
+    st.header("🪙 동전 던지기")
 
-def quiz_game():
-    print("\n=== 퀴즈 게임 ===")
+    if st.button("던지기"):
+        result = random.choice(["앞면", "뒷면"])
+        st.success(f"결과: {result}")
 
-    questions = {
-        "대한민국의 수도는?": "서울",
-        "1 + 1 = ?": "2",
-        "파이썬을 만든 사람 성은?": "반로섬"
-    }
+# 4. 주사위 굴리기
+elif game == "주사위 굴리기":
+    st.header("🎲 주사위")
+
+    if st.button("굴리기"):
+        result = random.randint(1, 6)
+        st.success(f"🎲 {result}")
+
+# 5. 퀴즈 게임
+elif game == "퀴즈 게임":
+    st.header("📚 퀴즈 게임")
 
     score = 0
 
-    for q, a in questions.items():
-        user = input(q + " ")
-        if user == a:
-            print("정답!")
+    q1 = st.text_input("대한민국의 수도는?")
+    q2 = st.text_input("1 + 1 = ?")
+    q3 = st.text_input("태양계에서 가장 큰 행성은?")
+
+    if st.button("채점"):
+        if q1.strip() == "서울":
             score += 1
+
+        if q2.strip() == "2":
+            score += 1
+
+        if q3.strip() in ["목성", "Jupiter"]:
+            score += 1
+
+        st.success(f"점수: {score}/3")
+
+# 6. 슬롯머신
+elif game == "행운의 슬롯머신":
+    st.header("🎰 슬롯머신")
+
+    if st.button("돌리기"):
+        symbols = ["🍒", "🍋", "🍇", "⭐", "💎"]
+
+        a = random.choice(symbols)
+        b = random.choice(symbols)
+        c = random.choice(symbols)
+
+        st.markdown(
+            f"# {a} {b} {c}"
+        )
+
+        if a == b == c:
+            st.success("🎉 JACKPOT!")
+        elif a == b or b == c or a == c:
+            st.info("😊 당첨!")
         else:
-            print("오답! 정답:", a)
-
-    print(f"점수: {score}/{len(questions)}")
-
-def reaction_test():
-    print("\n=== 반응속도 테스트 ===")
-    print("준비...")
-
-    wait_time = random.randint(2, 5)
-    time.sleep(wait_time)
-
-    print("지금!")
-
-    start = time.time()
-    input("엔터를 누르세요!")
-    end = time.time()
-
-    print(f"반응속도: {end - start:.3f}초")
-
-while True:
-    print("\n===================")
-    print(" 미니게임 모음 ")
-    print("===================")
-    print("1. 숫자 맞추기")
-    print("2. 가위바위보")
-    print("3. 동전 던지기")
-    print("4. 주사위 굴리기")
-    print("5. 퀴즈 게임")
-    print("6. 반응속도 테스트")
-    print("0. 종료")
-
-    choice = input("선택: ")
-
-    if choice == "1":
-        number_guess()
-    elif choice == "2":
-        rock_paper_scissors()
-    elif choice == "3":
-        coin_flip()
-    elif choice == "4":
-        dice_roll()
-    elif choice == "5":
-        quiz_game()
-    elif choice == "6":
-        reaction_test()
-    elif choice == "0":
-        print("프로그램 종료")
-        break
-    else:
-        print("잘못된 입력입니다.")
+            st.error("꽝!")
