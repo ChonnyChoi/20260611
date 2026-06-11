@@ -1,5 +1,6 @@
 import random
 import time
+import streamlit
 
 def number_guess():
     print("\n=== 숫자 맞추기 게임 ===")
