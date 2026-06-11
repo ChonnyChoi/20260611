@@ -1,128 +1,134 @@
-import streamlit as st
+import pygame
 import random
-import time
+import math
 
-st.set_page_config(page_title="미니게임 모음", page_icon="🎮")
+pygame.init()
 
-st.title("🎮 미니게임 6종 모음")
+WIDTH, HEIGHT = 1200, 800
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Cosmic Gravity Simulator")
 
-# 세션 상태 초기화
-if "answer" not in st.session_state:
-    st.session_state.answer = random.randint(1, 100)
+clock = pygame.time.Clock()
 
-game = st.sidebar.selectbox(
-    "게임 선택",
-    [
-        "숫자 맞추기",
-        "가위바위보",
-        "동전 던지기",
-        "주사위 굴리기",
-        "퀴즈 게임",
-        "행운의 슬롯머신"
-    ]
-)
+trail_surface = pygame.Surface((WIDTH, HEIGHT))
+trail_surface.set_alpha(40)
 
-# 1. 숫자 맞추기
-if game == "숫자 맞추기":
-    st.header("🔢 숫자 맞추기")
-
-    guess = st.number_input(
-        "1~100 사이 숫자를 입력하세요",
-        min_value=1,
-        max_value=100,
-        step=1
+stars = [
+    (
+        random.randint(0, WIDTH),
+        random.randint(0, HEIGHT),
+        random.randint(1, 3)
     )
+    for _ in range(300)
+]
 
-    if st.button("확인"):
-        if guess < st.session_state.answer:
-            st.warning("UP!")
-        elif guess > st.session_state.answer:
-            st.warning("DOWN!")
-        else:
-            st.success("🎉 정답!")
-            st.session_state.answer = random.randint(1, 100)
 
-# 2. 가위바위보
-elif game == "가위바위보":
-    st.header("✌️ 가위바위보")
+class Planet:
+    def __init__(self):
+        self.x = random.randint(100, WIDTH - 100)
+        self.y = random.randint(100, HEIGHT - 100)
 
-    user = st.radio(
-        "선택하세요",
-        ["가위", "바위", "보"]
-    )
+        angle = random.uniform(0, math.pi * 2)
 
-    if st.button("대결"):
-        computer = random.choice(["가위", "바위", "보"])
+        self.vx = math.cos(angle) * random.uniform(1, 3)
+        self.vy = math.sin(angle) * random.uniform(1, 3)
 
-        st.write("컴퓨터:", computer)
+        self.size = random.randint(4, 10)
+        self.hue = random.randint(0, 360)
 
-        if user == computer:
-            st.info("무승부!")
-        elif (
-            (user == "가위" and computer == "보") or
-            (user == "바위" and computer == "가위") or
-            (user == "보" and computer == "바위")
-        ):
-            st.success("승리!")
-        else:
-            st.error("패배!")
+    def update(self, mx, my):
 
-# 3. 동전 던지기
-elif game == "동전 던지기":
-    st.header("🪙 동전 던지기")
+        dx = mx - self.x
+        dy = my - self.y
 
-    if st.button("던지기"):
-        result = random.choice(["앞면", "뒷면"])
-        st.success(f"결과: {result}")
+        dist = math.sqrt(dx * dx + dy * dy)
 
-# 4. 주사위 굴리기
-elif game == "주사위 굴리기":
-    st.header("🎲 주사위")
+        if dist > 5:
+            force = 500 / (dist + 50)
 
-    if st.button("굴리기"):
-        result = random.randint(1, 6)
-        st.success(f"🎲 {result}")
+            self.vx += dx / dist * force * 0.02
+            self.vy += dy / dist * force * 0.02
 
-# 5. 퀴즈 게임
-elif game == "퀴즈 게임":
-    st.header("📚 퀴즈 게임")
+        speed_limit = 8
 
-    score = 0
+        speed = math.sqrt(self.vx**2 + self.vy**2)
 
-    q1 = st.text_input("대한민국의 수도는?")
-    q2 = st.text_input("1 + 1 = ?")
-    q3 = st.text_input("태양계에서 가장 큰 행성은?")
+        if speed > speed_limit:
+            self.vx *= speed_limit / speed
+            self.vy *= speed_limit / speed
 
-    if st.button("채점"):
-        if q1.strip() == "서울":
-            score += 1
+        self.x += self.vx
+        self.y += self.vy
 
-        if q2.strip() == "2":
-            score += 1
+        if self.x < 0 or self.x > WIDTH:
+            self.vx *= -1
 
-        if q3.strip() in ["목성", "Jupiter"]:
-            score += 1
+        if self.y < 0 or self.y > HEIGHT:
+            self.vy *= -1
 
-        st.success(f"점수: {score}/3")
+        self.hue += 1
+        if self.hue > 360:
+            self.hue = 0
 
-# 6. 슬롯머신
-elif game == "행운의 슬롯머신":
-    st.header("🎰 슬롯머신")
+    def draw(self):
 
-    if st.button("돌리기"):
-        symbols = ["🍒", "🍋", "🍇", "⭐", "💎"]
+        color = pygame.Color(0)
 
-        a = random.choice(symbols)
-        b = random.choice(symbols)
-        c = random.choice(symbols)
+        color.hsva = (self.hue, 100, 100, 100)
 
-        st.markdown(
-            f"# {a} {b} {c}"
+        pygame.draw.circle(
+            trail_surface,
+            color,
+            (int(self.x), int(self.y)),
+            self.size
         )
 
-        if a == b == c:
-            st.success("🎉 JACKPOT!")
-        elif a == b or b == c or a == c:
-            st.info("😊 당첨!")
-        else:
-            st.error("꽝!")
+        pygame.draw.circle(
+            screen,
+            color,
+            (int(self.x), int(self.y)),
+            self.size
+        )
+
+
+planets = [Planet() for _ in range(50)]
+
+running = True
+
+while running:
+
+    clock.tick(60)
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    mx, my = pygame.mouse.get_pos()
+
+    screen.fill((5, 5, 15))
+
+    for sx, sy, size in stars:
+        pygame.draw.circle(screen, (255, 255, 255), (sx, sy), size)
+
+    screen.blit(trail_surface, (0, 0))
+
+    fade = pygame.Surface((WIDTH, HEIGHT))
+    fade.set_alpha(10)
+    fade.fill((0, 0, 0))
+    trail_surface.blit(fade, (0, 0))
+
+    for planet in planets:
+        planet.update(mx, my)
+        planet.draw()
+
+    pygame.draw.circle(
+        screen,
+        (255, 255, 255),
+        (mx, my),
+        20,
+        2
+    )
+
+    pygame.display.flip()
+
+pygame.quit()
